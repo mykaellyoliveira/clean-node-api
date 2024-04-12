@@ -1,4 +1,4 @@
-import { type EmailValidator } from './../protocols/email-validator';
+import { type EmailValidator } from './../protocols/email-validator'
 import { SignUpController } from './signup'
 import { MissingParamError } from '../errors/missing-param-error'
 import { InvalidParamError } from '../errors/invalid-param-error'
@@ -7,6 +7,7 @@ import { InvalidParamError } from '../errors/invalid-param-error'
 // BOA PRATICA PARA CRIAR MOCKS
 // SEMPRE INICIALIZAR COM UM VALOR POSITIVO PARA N AFETAR OS OUTROS TESTES
 // ONDE QUISER QUE ELE FALHE MOCKA PARA ELE FALHAR
+
 // interface criada para definir o tipo do retorno do makeSut
 interface SutTypes {
   sut: SignUpController
@@ -109,5 +110,22 @@ describe('SignUp Controller', () => {
     const httpResponse = sut.handle(httpRequest)
     expect(httpResponse.statusCode).toBe(400)
     expect(httpResponse.body).toEqual(new InvalidParamError('email'))
+  })
+
+  test('Should call EmailValidator witch correct email', () => {
+    // irá testar se o método isValid do emailValidator está sendo chamado com o email correto
+    const { sut, emailValidatorStub } = makeSut()
+    // utilizado para capturar o retorno do isValid (espionando o método)
+    const isValidSpy = jest.spyOn(emailValidatorStub, 'isValid')
+    const httpRequest = {
+      body: {
+        name: 'any_name',
+        email: 'any_email@mail.com',
+        password: 'any_password',
+        passwordConfirmation: 'any_password'
+      }
+    }
+    sut.handle(httpRequest)
+    expect(isValidSpy).toHaveBeenCalledWith('any_email@mail.com')
   })
 })
