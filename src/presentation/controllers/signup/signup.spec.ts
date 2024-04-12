@@ -167,7 +167,7 @@ describe('SignUp Controller', () => {
     expect(isValidSpy).toHaveBeenCalledWith('any_email@mail.com')
   })
 
-  // irá testar se o método retornar exception vai ser retornar um erro 500
+  // irá testar se o método isValid retornar uma exception iremos retornar um erro 500
   test('Should return 500 if EmailValidator throws', () => {
     const { sut, emailValidatorStub } = makeSut()
     // utilizado para alterar e mockar a implementação do isValid onde a função irá retornar um error
@@ -206,5 +206,25 @@ describe('SignUp Controller', () => {
       email: 'any_email@mail.com',
       password: 'any_password'
     })
+  })
+
+  // irá testar se o método add retornar uma exception iremos retornar um erro 500
+  test('Should return 500 if AddAccount throws', () => {
+    const { sut, addAccountStub } = makeSut()
+    // utilizado para alterar e mockar a implementação do isValid onde a função irá retornar um error
+    jest.spyOn(addAccountStub, 'add').mockImplementationOnce(() => {
+      throw new Error()
+    })
+    const httpRequest = {
+      body: {
+        name: 'any_name',
+        email: 'any_email@mail.com',
+        password: 'any_password',
+        passwordConfirmation: 'any_password'
+      }
+    }
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 })
