@@ -2,6 +2,7 @@ import { type EmailValidator } from './../protocols/email-validator'
 import { SignUpController } from './signup'
 import { MissingParamError } from '../errors/missing-param-error'
 import { InvalidParamError } from '../errors/invalid-param-error'
+import { ServerError } from '../errors/server-error'
 
 // COLOCAR NO NOTION DPS
 // BOA PRATICA PARA CRIAR MOCKS
@@ -34,8 +35,8 @@ const makeSut = (): SutTypes => {
   }
 }
 describe('SignUp Controller', () => {
+  // irá testar se a rota retorna 400 caso o nome não seja passado no body
   test('Should return 400 if no name is provided', () => {
-    // irá testar se a rota retorna 400 caso o nome não seja passado no body
     const { sut } = makeSut()
     const httpRequest = {
       body: {
@@ -49,8 +50,8 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('name'))
   })
 
+  // irá testar se a rota retorna 400 caso o email não seja passado no body
   test('Should return 400 if no email is provided', () => {
-    // irá testar se a rota retorna 400 caso o email não seja passado no body
     const { sut } = makeSut()
     const httpRequest = {
       body: {
@@ -64,8 +65,8 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('email'))
   })
 
+  // irá testar se a rota retorna 400 caso a senha não seja passado no body
   test('Should return 400 if no password is provided', () => {
-    // irá testar se a rota retorna 400 caso a senha não seja passado no body
     const { sut } = makeSut()
     const httpRequest = {
       body: {
@@ -79,8 +80,8 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('password'))
   })
 
+  // irá testar se a rota retorna 400 caso a confirmação da senha não seja passado no body
   test('Should return 400 if no password confirmation is provided', () => {
-    // irá testar se a rota retorna 400 caso a confirmação da senha não seja passado no body
     const { sut } = makeSut()
     const httpRequest = {
       body: {
@@ -94,8 +95,8 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('passwordConfirmation'))
   })
 
+  // irá testar se a rota retorna 400 caso o email seja invalido
   test('Should return 400 if an invalid email is provided', () => {
-    // irá testar se a rota retorna 400 caso o email seja invalido
     const { sut, emailValidatorStub } = makeSut()
     // utilizado para alterar e mockar o retorno do método q era true para false
     jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
@@ -112,8 +113,8 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new InvalidParamError('email'))
   })
 
+  // irá testar se o método isValid do emailValidator está sendo chamado com o email correto
   test('Should call EmailValidator witch correct email', () => {
-    // irá testar se o método isValid do emailValidator está sendo chamado com o email correto
     const { sut, emailValidatorStub } = makeSut()
     // utilizado para capturar o retorno do isValid (espionando o método)
     const isValidSpy = jest.spyOn(emailValidatorStub, 'isValid')
@@ -127,5 +128,29 @@ describe('SignUp Controller', () => {
     }
     sut.handle(httpRequest)
     expect(isValidSpy).toHaveBeenCalledWith('any_email@mail.com')
+  })
+
+  // irá testar se o método retornar exception vai ser retornar um erro 500
+  test('Should return 500 if EmailValidator throws', () => {
+    class EmailValidatorStub implements EmailValidator {
+      isValid (email: string): boolean {
+        throw new Error()
+      }
+    }
+    const emailValidatorStub = new EmailValidatorStub()
+    const sut = new SignUpController(emailValidatorStub)
+    // utilizado para alterar e mockar o retorno do método q era true para false
+    jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
+    const httpRequest = {
+      body: {
+        name: 'any_name',
+        email: 'any_email@mail.com',
+        password: 'any_password',
+        passwordConfirmation: 'any_password'
+      }
+    }
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 })
