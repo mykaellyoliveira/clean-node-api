@@ -1,4 +1,4 @@
-import { type EmailValidator } from './../protocols/email-validator'
+import { type EmailValidator } from '../protocols'
 import { SignUpController } from './signup'
 import { MissingParamError, InvalidParamError, ServerError } from '../errors'
 
@@ -12,16 +12,30 @@ interface SutTypes {
   sut: SignUpController
   emailValidatorStub: EmailValidator
 }
-// utilizando esse factor se começarmos a adicionar dependencias no nosso controller, n será
-// necessario alterar todos os testes  ex SignUpController(dependencia)
-const makeSut = (): SutTypes => {
+
+const makeEmailValidator = (): EmailValidator => {
   // stub é um tipo de mock que existe -> onde pega uma função e da uma retorno fixo p ela
   class EmailValidatorStub implements EmailValidator {
     isValid (email: string): boolean {
       return true
     }
   }
-  const emailValidatorStub = new EmailValidatorStub()
+  return new EmailValidatorStub()
+}
+
+const makeEmailValidatorWithError = (): EmailValidator => {
+  // stub é um tipo de mock que existe -> onde pega uma função e da uma retorno fixo p ela
+  class EmailValidatorStub implements EmailValidator {
+    isValid (email: string): boolean {
+      throw new Error()
+    }
+  }
+  return new EmailValidatorStub()
+}
+// utilizando esse factor se começarmos a adicionar dependencias no nosso controller, n será
+// necessario alterar todos os testes  ex SignUpController(dependencia)
+const makeSut = (): SutTypes => {
+  const emailValidatorStub = makeEmailValidator()
   const sut = new SignUpController(emailValidatorStub)
   // esse return foi criado pois o método isvalid precisa ser mockado de uma maneira q não de erro pois se n todos os testes q utilizam
   // o makesut vão retornar o erro de email invalido
@@ -130,12 +144,7 @@ describe('SignUp Controller', () => {
 
   // irá testar se o método retornar exception vai ser retornar um erro 500
   test('Should return 500 if EmailValidator throws', () => {
-    class EmailValidatorStub implements EmailValidator {
-      isValid (email: string): boolean {
-        throw new Error()
-      }
-    }
-    const emailValidatorStub = new EmailValidatorStub()
+    const emailValidatorStub = makeEmailValidatorWithError()
     const sut = new SignUpController(emailValidatorStub)
     const httpRequest = {
       body: {
