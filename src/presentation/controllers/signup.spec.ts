@@ -1,6 +1,9 @@
 import { SignUpController } from './signup'
 import { MissingParamError } from '../errors/missing-param-error'
 
+// utilizando esse factor se começarmos a adicionar dependencias no nosso controller, n será
+// necessario alterar todos os testes  ex SignUpController(dependencia)
+
 const makeSut = (): SignUpController => {
   return new SignUpController()
 }
@@ -21,7 +24,7 @@ describe('SignUp Controller', () => {
   })
 
   test('Should return 400 if no email is provided', () => {
-    // irá testar se a rota retorna 400 caso o nome não seja passado no body
+    // irá testar se a rota retorna 400 caso o email não seja passado no body
     const sut = makeSut()
     const httpRequest = {
       body: {
@@ -36,7 +39,7 @@ describe('SignUp Controller', () => {
   })
 
   test('Should return 400 if no password is provided', () => {
-    // irá testar se a rota retorna 400 caso o nome não seja passado no body
+    // irá testar se a rota retorna 400 caso a senha não seja passado no body
     const sut = makeSut()
     const httpRequest = {
       body: {
@@ -50,8 +53,8 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('password'))
   })
 
-  test('Should return 400 if no passwordConfirmation is provided', () => {
-    // irá testar se a rota retorna 400 caso o nome não seja passado no body
+  test('Should return 400 if no password confirmation is provided', () => {
+    // irá testar se a rota retorna 400 caso a confirmação da senha não seja passado no body
     const sut = makeSut()
     const httpRequest = {
       body: {
