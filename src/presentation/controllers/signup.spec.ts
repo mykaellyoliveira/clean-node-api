@@ -1,8 +1,6 @@
 import { type EmailValidator } from './../protocols/email-validator'
 import { SignUpController } from './signup'
-import { MissingParamError } from '../errors/missing-param-error'
-import { InvalidParamError } from '../errors/invalid-param-error'
-import { ServerError } from '../errors/server-error'
+import { MissingParamError, InvalidParamError, ServerError } from '../errors'
 
 // COLOCAR NO NOTION DPS
 // BOA PRATICA PARA CRIAR MOCKS
@@ -139,8 +137,6 @@ describe('SignUp Controller', () => {
     }
     const emailValidatorStub = new EmailValidatorStub()
     const sut = new SignUpController(emailValidatorStub)
-    // utilizado para alterar e mockar o retorno do método q era true para false
-    jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
     const httpRequest = {
       body: {
         name: 'any_name',
