@@ -1,17 +1,13 @@
 import { type EmailValidator } from '../protocols'
 import { SignUpController } from './signup'
 import { MissingParamError, InvalidParamError, ServerError } from '../errors'
+import { type AddAccount, type AddAccountModel } from '../../domain/usecases/add-account'
+import { type AccountModel } from '../../domain/models/account'
 
 // COLOCAR NO NOTION DPS
 // BOA PRATICA PARA CRIAR MOCKS
 // SEMPRE INICIALIZAR COM UM VALOR POSITIVO PARA N AFETAR OS OUTROS TESTES
 // ONDE QUISER QUE ELE FALHE MOCKA PARA ELE FALHAR
-
-// interface criada para definir o tipo do retorno do makeSut
-interface SutTypes {
-  sut: SignUpController
-  emailValidatorStub: EmailValidator
-}
 
 const makeEmailValidator = (): EmailValidator => {
   // stub é um tipo de mock que existe -> onde pega uma função e da uma retorno fixo p ela
@@ -23,18 +19,42 @@ const makeEmailValidator = (): EmailValidator => {
   return new EmailValidatorStub()
 }
 
-// utilizando esse factor se começarmos a adicionar dependencias no nosso controller, n será
-// necessario alterar todos os testes  ex SignUpController(dependencia)
+const makeAddAccount = (): AddAccount => {
+  // stub é um tipo de mock que existe -> onde pega uma função e da uma retorno fixo p ela
+  class AddAccountStub implements AddAccount {
+    add (account: AddAccountModel): AccountModel {
+      const fakeAccount = {
+        id: 'valid_id',
+        name: 'valid_name',
+        email: 'valid_email@mail.com',
+        password: 'valid_password'
+      }
+      return fakeAccount
+    }
+  }
+  return new AddAccountStub()
+}
+
+// interface criada para definir o tipo do retorno do makeSut
+interface SutTypes {
+  sut: SignUpController
+  emailValidatorStub: EmailValidator
+  addAccountStub: AddAccount
+}
+// utilizando esse factory "make" para se começarmos a adicionar dependencias no nosso controller n será
+// necessario alterar todos os testes ex SignUpController(dependencia)
 const makeSut = (): SutTypes => {
+  const addAccountStub = makeAddAccount()
   const emailValidatorStub = makeEmailValidator()
-  const sut = new SignUpController(emailValidatorStub)
+  const sut = new SignUpController(emailValidatorStub, addAccountStub)
   // esse return foi criado pois o método isvalid precisa ser mockado de uma maneira q não de erro pois se n todos os testes q utilizam
   // o makesut vão retornar o erro de email invalido
   // ou seja ele precisa retornar true significando q o email é valido, porém para validarmos em um teste q vai dar um erro caso seja invalido precisamos
   // fazer o mock ao contrario para retornar invalido, por isso estamos retornando ele separado
   return {
     sut,
-    emailValidatorStub
+    emailValidatorStub,
+    addAccountStub
   }
 }
 describe('SignUp Controller', () => {
@@ -167,5 +187,26 @@ describe('SignUp Controller', () => {
     const httpResponse = sut.handle(httpRequest)
     expect(httpResponse.statusCode).toBe(500)
     expect(httpResponse.body).toEqual(new ServerError())
+  })
+
+  // irá testar se o método addAcount está recebendo os valores corretos
+  test('Should call AddCount witch correct values', () => {
+    const { sut, addAccountStub } = makeSut()
+    // utilizado para capturar o retorno do isValid (espionando o método)
+    const addSpy = jest.spyOn(addAccountStub, 'add')
+    const httpRequest = {
+      body: {
+        name: 'any_name',
+        email: 'any_email@mail.com',
+        password: 'any_password',
+        passwordConfirmation: 'any_password'
+      }
+    }
+    sut.handle(httpRequest)
+    expect(addSpy).toHaveBeenCalledWith({
+      name: 'any_name',
+      email: 'any_email@mail.com',
+      password: 'any_password'
+    })
   })
 })
