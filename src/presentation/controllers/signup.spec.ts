@@ -23,15 +23,6 @@ const makeEmailValidator = (): EmailValidator => {
   return new EmailValidatorStub()
 }
 
-const makeEmailValidatorWithError = (): EmailValidator => {
-  // stub é um tipo de mock que existe -> onde pega uma função e da uma retorno fixo p ela
-  class EmailValidatorStub implements EmailValidator {
-    isValid (email: string): boolean {
-      throw new Error()
-    }
-  }
-  return new EmailValidatorStub()
-}
 // utilizando esse factor se começarmos a adicionar dependencias no nosso controller, n será
 // necessario alterar todos os testes  ex SignUpController(dependencia)
 const makeSut = (): SutTypes => {
@@ -144,8 +135,11 @@ describe('SignUp Controller', () => {
 
   // irá testar se o método retornar exception vai ser retornar um erro 500
   test('Should return 500 if EmailValidator throws', () => {
-    const emailValidatorStub = makeEmailValidatorWithError()
-    const sut = new SignUpController(emailValidatorStub)
+    const { sut, emailValidatorStub } = makeSut()
+    // utilizado para alterar e mockar a implementação do isValid onde a função irá retornar um error
+    jest.spyOn(emailValidatorStub, 'isValid').mockImplementationOnce(() => {
+      throw new Error()
+    })
     const httpRequest = {
       body: {
         name: 'any_name',
